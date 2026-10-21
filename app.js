@@ -609,7 +609,7 @@ function moveBus(p) {
 })(performance.now());
 
 /* ============================================================
-   5. STATE, REAL-TIME & TIMELINE UI
+   5. STATE, REAL-TIME & TIMELINE UI WITH STANDBY STOPS
    ============================================================ */
 const S = { mode: "sim", f: 0, speed: 0, ema: 6, mult: 1, follow: true, jam: 0, dwell: 0,
             atStop: null, warned: new Set(), slow: 0, offline: false, updated: 0, liveLast: 0, unsub: null, lastTs: 0 };
@@ -617,10 +617,20 @@ const S = { mode: "sim", f: 0, speed: 0, ema: 6, mult: 1, follow: true, jam: 0, 
 function renderStopsList() {
   const stopsEl = $("#stops");
   stopsEl.innerHTML = "";
+  const isOperating = isBusOperating(activeBusKey);
+
   stops.forEach((s, i) => {
     const li = document.createElement("li");
     li.tabIndex = 0;
-    li.innerHTML = `<span class="dot">${i + 1}</span><div class="s-name"><b>${s.name}</b><small>Pickup ${s.morning}</small></div><span class="eta">–</span>`;
+    
+    // If not operating or offline, render clean standby format
+    if (!isOperating) {
+      li.className = "standby-stop";
+      li.innerHTML = `<span class="dot">${i + 1}</span><div class="s-name"><b>${s.name}</b><small>Scheduled • ${s.morning}</small></div><span class="eta">Standby</span>`;
+    } else {
+      li.innerHTML = `<span class="dot">${i + 1}</span><div class="s-name"><b>${s.name}</b><small>Pickup ${s.morning}</small></div><span class="eta">–</span>`;
+    }
+
     const go = () => { setFollow(false); map.flyTo(s.pos, 17, { duration: .8 }); };
     li.onclick = go; li.onkeydown = e => { if (e.key === "Enter") go(); };
     stopsEl.append(li);
@@ -642,10 +652,20 @@ function info() {
 function updateUI() {
   if (!stops.length) return;
   const isRunning = isBusOperating(activeBusKey);
-  if (!isRunning && S.mode === "live") {
+
+  // If bus is off duty / offline, lock all stops and stats to standby
+  if (!isRunning) {
     $("#vSpeed").innerHTML = `0<span>km/h</span>`;
     $("#vNext").textContent = "Service Halted";
-    $("#vEta").textContent = "Off-Duty";
+    $("#vEta").textContent = "Standby";
+
+    stops.forEach(s => {
+      if (s.el) {
+        s.el.className = "standby-stop";
+        s.sub.textContent = `Scheduled • ${s.morning}`;
+        s.etaEl.textContent = "Standby";
+      }
+    });
     return;
   }
 
@@ -661,14 +681,55 @@ function updateUI() {
   });
 }
 
-/* Alerts */
+/* ============================================================
+   TOP FLOATING TOAST NOTIFIER & ALERTS HISTORY
+   ============================================================ */
 const ICON = { info: "i", ok: "✓", warn: "!", bad: "×" };
+
+// Instant Top Floating Toast notification (Auto-dismisses in 4.5s)
+function showTopToast(type, title, msg) {
+  const container = $("#toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast-item ${type}`;
+  toast.innerHTML = `
+    <span class="toast-ic">${ICON[type] || 'i'}</span>
+    <div class="toast-content">
+      <strong>${title}</strong>
+      <p>${msg}</p>
+    </div>
+    <button class="toast-close" aria-label="Dismiss">&times;</button>
+  `;
+
+  const dismiss = () => {
+    if (toast.classList.contains("out")) return;
+    toast.classList.add("out");
+    setTimeout(() => toast.remove(), 260);
+  };
+
+  toast.querySelector(".toast-close").onclick = dismiss;
+  container.prepend(toast);
+
+  // Keep max 2 toasts visible at a time
+  [...container.children].slice(2).forEach(t => {
+    t.classList.add("out");
+    setTimeout(() => t.remove(), 260);
+  });
+
+  setTimeout(dismiss, 4500);
+}
+
+// Side Panel Alerts List
 function closeAlert(el) {
   if (!el || el.classList.contains("out")) return;
   el.classList.add("out");
   setTimeout(() => el.remove(), 320);
 }
 function pushAlert(type, title, msg, key) {
+  // Always trigger top floating toast so mobile users don't need to scroll
+  showTopToast(type, title, msg);
+
   const box = $("#alerts");
   if (key && box.querySelector(`[data-key="${key}"]:not(.out)`)) return;
   const el = document.createElement("div");
@@ -684,6 +745,8 @@ $("#clearAlerts").onclick = () => [...$("#alerts").children].forEach(closeAlert)
 
 function alertsLogic() {
   if (!stops.length) return;
+  if (!isBusOperating(activeBusKey)) return;
+
   const { at, next } = info();
   if (at) {
     if (S.atStop !== at.s.name) {
@@ -728,21 +791,27 @@ function checkOperatingStatus() {
   if (!isOperating) {
     notice.classList.remove("hidden");
     if (busEl) busEl.classList.add("bus-offline");
-    if (S.mode === "live") {
-      setPill("night", "Night Offline");
-      $("#updated").textContent = "Service off-duty";
-    }
+    setPill("standby", "Standby (Night Offline)");
+    $("#updated").textContent = "Service Standby";
+    updateUI();
   } else {
     notice.classList.add("hidden");
     if (busEl) busEl.classList.remove("bus-offline");
     if (S.mode === "live" && !S.offline) setPill("live", "Live");
+    else if (S.mode === "sim") setPill("sim", "Simulator");
   }
 }
-setInterval(checkOperatingStatus, 30000);
+setInterval(checkOperatingStatus, 20000);
 
 /* Simulator Loop */
 function simTick() {
   if (S.mode !== "sim" || !stops.length) return;
+  const isOperating = isBusOperating(activeBusKey);
+  if (!isOperating) {
+    updateUI();
+    return;
+  }
+
   const dt = S.mult;
   const ahead = stops.map(s => distTo(s, S.f)).filter(d => d > 1);
   const nextD = ahead.length ? Math.min(...ahead) : 999;
@@ -765,8 +834,8 @@ setInterval(simTick, 1000);
 async function startLive() {
   const isOperating = isBusOperating(activeBusKey);
   if (!isOperating) {
-    setPill("night", "Night Offline");
-    pushAlert("warn", "Shuttles Off-Duty", "Buses are parked for the night. Tracker resumes at 06:30 AM.", "off-hours");
+    setPill("standby", "Standby (Night Offline)");
+    pushAlert("warn", "Shuttles on Standby", "Buses are off-duty for the night. Tracker resumes at 06:30 AM.", "off-hours");
   }
 
   const [{ initializeApp }, { getDatabase, ref, onValue }] = await Promise.all([
@@ -784,7 +853,7 @@ async function startLive() {
     if (isBusOperating(activeBusKey)) {
       setPill("live", "Live");
     } else {
-      setPill("night", "Night Offline");
+      setPill("standby", "Standby (Night Offline)");
     }
     S.f = nearest([lat, lng]);
     handle([lat, lng], +v.speed || 0);
@@ -796,7 +865,7 @@ setInterval(() => {
   if (S.mode === "live") {
     const isOperating = isBusOperating(activeBusKey);
     if (!isOperating) {
-      setPill("night", "Night Offline");
+      setPill("standby", "Standby (Night Offline)");
       return;
     }
     if (S.liveLast && !S.offline && Date.now() - S.liveLast > 15000) {
@@ -827,7 +896,7 @@ function switchBus(busKey) {
 
   renderMapForActiveBus();
   renderRoutesCatalog();
-  pushAlert("info", `${b.name} Loaded`, `Driver: ${b.driver} • Halting: ${b.halting}`, "bus-switched");
+  pushAlert("info", `${b.name} Selected`, `Driver: ${b.driver} • Halting: ${b.halting}`, "bus-switched");
 
   if (S.mode === "live") {
     stopLive();
@@ -885,7 +954,7 @@ function renderRoutesCatalog(targetSelectionMode = false) {
           <div style="display:flex;gap:4px;flex-direction:column;align-items:flex-end;">
             <span class="route-badge-pill ${zoneBadgeClass}">${busData.defaultZone}</span>
             <span style="font-size:0.68rem;font-weight:700;color:${isOperating ? 'var(--ok)' : 'var(--muted)'};">
-              ${isOperating ? '● Operating' : '○ Night Offline'}
+              ${isOperating ? '● Operating' : '○ Standby (Night)'}
             </span>
           </div>
         </div>
@@ -1012,7 +1081,7 @@ function setMode(m) {
     setPill("off", "Connecting GPS");
     startLive().catch(() => pushAlert("bad", "Could not connect", "Check connection and credentials.", "fberr"));
   } else {
-    setPill("sim", "Simulator");
+    checkOperatingStatus();
   }
 }
 document.querySelectorAll("#seg button").forEach(b => b.onclick = () => setMode(b.dataset.mode));
@@ -1332,6 +1401,5 @@ try {
   }
 } catch (err) {}
 
-setPill("sim", "Simulator");
 renderMapForActiveBus();
 simTick();
