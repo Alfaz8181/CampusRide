@@ -50,6 +50,23 @@ body.modal-open{overflow:hidden}
 button{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--info);outline-offset:2px}
 
+/* ==================== Floating Top Toast System ==================== */
+.toast-container{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;width:calc(100% - 24px);max-width:480px;pointer-events:none}
+.toast-item{pointer-events:auto;--tc:var(--info);display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;background:var(--card);border:1.5px solid var(--line);border-left:5px solid var(--tc);box-shadow:0 12px 32px rgba(0,0,0,.35);animation:toastIn .35s cubic-bezier(.2,1.2,.4,1) both}
+.toast-item.ok{--tc:var(--ok)}
+.toast-item.warn{--tc:var(--warn)}
+.toast-item.bad{--tc:var(--bad)}
+.toast-item.out{animation:toastOut .25s ease-in forwards}
+.toast-ic{width:26px;height:26px;border-radius:50%;background:var(--tc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.85rem;flex:none}
+.toast-content{flex:1;min-width:0}
+.toast-content strong{display:block;font-size:.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast-content p{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast-close{border:0;background:none;color:var(--muted);font-size:1.25rem;cursor:pointer;padding:4px;border-radius:6px;line-height:1}
+.toast-close:hover{color:var(--text)}
+
+@keyframes toastIn{from{opacity:0;transform:translateY(-24px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-20px) scale(.92);height:0;padding:0;margin:0;border:0}}
+
 /* Header */
 .top{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right));background:var(--ink);color:#fff}
 .brand{display:flex;align-items:center;gap:10px;min-width:0;flex-shrink:1}
@@ -65,6 +82,7 @@ button{font:inherit;color:inherit}
 .pill.live i{background:#34d399;box-shadow:0 0 0 0 rgba(52,211,153,.7)}
 .pill.off i{background:#f87171;animation:none}
 .pill.night i{background:#94a3b8;animation:none}
+.pill.standby i{background:#94a3b8;animation:none}
 @keyframes beat{70%{box-shadow:0 0 0 9px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
 
 .nav-chip-btn{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;transition:background .2s,transform .15s}
@@ -78,7 +96,6 @@ button{font:inherit;color:inherit}
 [data-theme="dark"] .icon-btn .sun{display:block}
 [data-theme="dark"] .icon-btn .moon{display:none}
 
-/* Mobile Subbar for non-overlapping mobile clean display */
 .mobile-subbar{display:none}
 .mobile-only{display:none}
 
@@ -167,7 +184,7 @@ button{font:inherit;color:inherit}
 .stat b{display:block;font-size:1.35rem;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .stat b span{font-size:.75rem;font-weight:600;color:var(--muted);margin-left:2px}
 
-/* Alerts */
+/* Alerts History Box */
 .sec-head{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:1.05rem;padding:2px 2px 0}
 .link{border:0;background:none;color:var(--muted);font-size:.85rem;font-weight:600;cursor:pointer;padding:6px 8px;border-radius:8px}
 .link:hover{background:var(--chip);color:var(--text)}
@@ -203,6 +220,8 @@ button{font:inherit;color:inherit}
 #stops li.at .dot{background:var(--ok);border-color:var(--ok);color:#fff}
 #stops li.at .eta{background:var(--ok);color:#fff}
 #stops li.gone{opacity:.55}
+#stops li.standby-stop{opacity:.7}
+#stops li.standby-stop .eta{background:var(--chip);color:var(--muted);font-size:.78rem;font-weight:700}
 
 /* Map markers */
 .bus{width:40px;height:40px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;border:3px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.35);position:relative}
@@ -332,6 +351,27 @@ button{font:inherit;color:inherit}
 .id-pass-meta div small{display:block;font-size:.68rem;color:var(--muted);font-weight:700}
 .id-pass-meta div span{font-size:.8rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 
+/* Footer Copyright */
+.app-footer {
+  margin-top: auto;
+  padding: 16px 8px 8px;
+  text-align: center;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.app-footer p {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+.app-footer small {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
 /* Responsive & Mobile Fixes */
 @media (max-width:900px){
   .desktop-pill{display:none}
@@ -340,7 +380,6 @@ button{font:inherit;color:inherit}
   .nav-chip-btn span{display:none}
   .nav-chip-btn{padding:0 10px;width:38px;height:38px;justify-content:center}
 
-  /* Secondary bar on mobile to cleanly house status without colliding */
   .mobile-subbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--card);border-bottom:1px solid var(--line);gap:10px}
   .mobile-time-badge{font-size:.78rem;color:var(--muted);font-weight:700}
 
@@ -361,27 +400,4 @@ button{font:inherit;color:inherit}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
-}
-
-/* Footer & Copyright Notice */
-.app-footer {
-  margin-top: auto;
-  padding: 16px 8px 8px;
-  text-align: center;
-  border-top: 1px dashed var(--line);
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.5;
-}
-
-.app-footer p {
-  font-weight: 700;
-  color: var(--text);
-  font-size: 0.8rem;
-}
-
-.app-footer small {
-  display: block;
-  font-size: 0.72rem;
-  opacity: 0.85;
 }
