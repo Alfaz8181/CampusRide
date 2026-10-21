@@ -4,16 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CampusRide – Kishkinda University Shuttle Tracker</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
 <!-- Browser Favicon & Mobile Touch Icons -->
 <link rel="icon" type="image/png" sizes="32x32" href="ku-logo.png">
 <link rel="icon" type="image/png" sizes="16x16" href="ku-logo.png">
 <link rel="apple-touch-icon" sizes="180x180" href="ku-logo.png">
-<!-- Fallback for standard .ico if present -->
 <link rel="shortcut icon" href="ku-logo.png" type="image/x-icon">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script>
   (function(){var t=null;try{t=localStorage.getItem('cr-theme')}catch(e){}
   if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
@@ -22,6 +23,9 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- Floating Top Toast Alerts for Instant Visibility (Especially Mobile) -->
+<div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
 <header class="top">
   <div class="brand">
@@ -84,7 +88,7 @@
   </div>
 </header>
 
-<!-- Mobile Sub-Bar showing clean status pill without colliding with the logo -->
+<!-- Mobile Sub-Bar -->
 <div class="mobile-subbar mobile-only">
   <span id="mobilePill" class="pill"><i></i><b id="mobilePillText">Simulator</b></span>
   <span class="mobile-time-badge" id="mobileTimeBadge">Active Route: Bus 01</span>
@@ -159,7 +163,7 @@
       <div class="card stat"><small>Arrives in</small><b id="vEta">–</b></div>
     </div>
 
-    <div class="sec-head"><span>Alerts</span><button class="link" id="clearAlerts">Clear all</button></div>
+    <div class="sec-head"><span>Alerts History</span><button class="link" id="clearAlerts">Clear all</button></div>
     <div id="alerts" aria-live="polite"></div>
 
     <div class="sec-head"><span id="stopsHeader">Route Stops</span></div>
@@ -173,6 +177,12 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>Simulate traffic
       </button>
     </div>
+
+    <!-- Footer Copyright -->
+    <footer class="app-footer">
+      <p>&copy; 2026 Kishkinda University. All rights reserved.</p>
+      <small>Campus Transport & Shuttle Monitoring System</small>
+    </footer>
   </aside>
 </main>
 
@@ -350,11 +360,6 @@
     <div class="buses-cards-grid" id="busesCardsGrid"></div>
   </div>
 </div>
-<!-- Footer Copyright -->
-<footer class="app-footer">
-  <p>&copy; 2026 Kishkinda University. All rights reserved.</p>
-  <small>Campus Transport & Shuttle Monitoring System</small>
-</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="app.js"></script>
